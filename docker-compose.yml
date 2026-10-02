@@ -1,0 +1,54 @@
+services:
+  web:
+    build: .
+    container_name: week4-web
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: db
+      DB_NAME: week4db
+      DB_USER: week4user
+      DB_PASSWORD: week4pass
+      REDIS_HOST: redis
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - week4-network
+
+  db:
+    image: postgres:16-alpine
+    container_name: week4-postgres
+    environment:
+      POSTGRES_DB: week4db
+      POSTGRES_USER: week4user
+      POSTGRES_PASSWORD: week4pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U week4user -d week4db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - week4-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: week4-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - week4-network
+
+volumes:
+  postgres_data:
+
+networks:
+  week4-network:
+    driver: bridge
